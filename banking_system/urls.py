@@ -22,6 +22,6 @@ from banking_system_api import urls as banking_system_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
-    path('banking_systems/', include(banking_system_urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api/', include(banking_system_urls))
 ]
