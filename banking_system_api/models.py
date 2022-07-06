@@ -36,8 +36,9 @@ class Currency(models.Model):
         return self.name
 
 
-class BankAccount(models.Model):
+class Account(models.Model):
     id = models.AutoField(primary_key=True)
+    account_number = models.CharField(max_length=26)
     creation_date = models.DateTimeField(auto_now=False, auto_now_add=True, blank=True)
     balance = models.DecimalField(decimal_places=2, max_digits=20)
     client_id = models.ForeignKey(Client, on_delete=models.CASCADE)
@@ -45,5 +46,5 @@ class BankAccount(models.Model):
     account_type_id = models.ForeignKey(AccountType, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.balance} {self.currency_id.symbol}'
+        return f'{self.account_number}: {self.balance} {self.currency_id}'
 

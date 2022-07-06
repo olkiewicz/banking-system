@@ -4,15 +4,17 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from banking_system_api.models import BankAccount, Address, Client, AccountType, Currency
-from banking_system_api.serializers import BankAccountSerializer, AddressSerializer, ClientSerializer, \
+from banking_system_api.models import Account, Address, Client, AccountType, Currency
+from banking_system_api.serializers import AccountSerializer, AddressSerializer, ClientSerializer, \
     AccountTypeSerializer, CurrencySerializer
 
 
-class AddressListApiView(APIView):
+class BaseApiView(APIView):
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
 
+
+class AddressListApiView(BaseApiView):
     # 1. Get all
     def get(self, request):
         addresses = Address.objects.all()
@@ -33,10 +35,7 @@ class AddressListApiView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ClientsListApiView(APIView):
-    # add permission to check if user is authenticated
-    permission_classes = [permissions.IsAuthenticated]
-
+class ClientsListApiView(BaseApiView):
     # 1. Get all
     def get(self, request):
         addresses = Client.objects.all()
@@ -50,7 +49,6 @@ class ClientsListApiView(APIView):
             'last_name': request.data.get('last_name'),
             'address_id': request.data.get('address_id')
         }
-        print(f'----{data}')
         serializer = ClientSerializer(data=data)
 
         if serializer.is_valid():
@@ -61,10 +59,7 @@ class ClientsListApiView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AccountTypeApiView(APIView):
-    # add permission to check if user is authenticated
-    permission_classes = [permissions.IsAuthenticated]
-
+class AccountTypeApiView(BaseApiView):
     # 1. Get all
     def get(self, request):
         account_types = AccountType.objects.all()
@@ -76,7 +71,6 @@ class AccountTypeApiView(APIView):
         data = {
             'name': request.data.get('name')
         }
-        print(f'----{data}')
         serializer = AccountTypeSerializer(data=data)
 
         if serializer.is_valid():
@@ -87,10 +81,7 @@ class AccountTypeApiView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CurrencyApiView(APIView):
-    # add permission to check if user is authenticated
-    permission_classes = [permissions.IsAuthenticated]
-
+class CurrencyApiView(BaseApiView):
     # 1. Get all
     def get(self, request):
         account_types = Currency.objects.all()
@@ -100,9 +91,9 @@ class CurrencyApiView(APIView):
     # 2. Create
     def post(self, request):
         data = {
+            'symbol': request.data.get('symbol'),
             'name': request.data.get('name')
         }
-        print(f'----{data}')
         serializer = CurrencySerializer(data=data)
 
         if serializer.is_valid():
@@ -113,23 +104,25 @@ class CurrencyApiView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class BankAccountListApiView(APIView):
-    # add permission to check if user is authenticated
-    permission_classes = [permissions.IsAuthenticated]
+def generate_account_number():
+    # FIXME
+    return '12345678901234567890123456'
 
+
+class AccountListApiView(BaseApiView):
     # 1. List all
-    def get(self, client_id=None):
+    def get(self, request, client_id=None):
         '''
         List all the bank accounts or bank accounts for given client
         '''
 
         if client_id:
-            bank_accounts = BankAccount.objects.filter(client_id=client_id)
+            accounts = Account.objects.filter(client_id=client_id)
 
         else:
-            bank_accounts = BankAccount.objects.all()
+            accounts = Account.objects.all()
 
-        serializer = BankAccountSerializer(bank_accounts, many=True)
+        serializer = AccountSerializer(accounts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # 2. Create
@@ -137,13 +130,17 @@ class BankAccountListApiView(APIView):
         '''
         Create the bank account with given data
         '''
+        # FIXME: use client's name
         data = {
+            'account_number': generate_account_number(),
             'balance': request.data.get('balance'),
             'client_id': request.data.get('client_id'),
             'currency_id': request.data.get('currency_id'),
             'account_type_id': request.data.get('account_type_id')
         }
-        serializer = BankAccountSerializer(data=data)
+
+        serializer = AccountSerializer(data=data)
+
         if serializer.is_valid():
             serializer.save()
 
@@ -151,9 +148,4 @@ class BankAccountListApiView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # # 3. Delete
-    # def delete(self, request, *args, **kwargs):
-    #     '''
-    #     Delete the bank
-    #     '''
 

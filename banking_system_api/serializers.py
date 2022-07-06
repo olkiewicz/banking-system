@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
-from banking_system_api.models import BankAccount, Address, Client, AccountType, Currency
+from banking_system_api.models import Account, Address, Client, AccountType, Currency
 
 
-class BankAccountSerializer(serializers.ModelSerializer):
+class AccountSerializer(serializers.ModelSerializer):
     class Meta:
-        model = BankAccount
-        fields = ['id', 'balance', 'client_id', 'currency_id', 'account_type_id', 'creation_date']
+        model = Account
+        fields = ['id', 'account_number', 'balance', 'client_id', 'currency_id', 'account_type_id', 'creation_date']
 
 
 class AddressSerializer(serializers.ModelSerializer):
