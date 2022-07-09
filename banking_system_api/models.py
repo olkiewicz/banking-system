@@ -48,3 +48,6 @@ class Account(models.Model):
     def __str__(self):
         return f'{self.account_number}: {self.balance} {self.currency_id}'
 
+    class Meta:
+        ordering = ['creation_date']
+
