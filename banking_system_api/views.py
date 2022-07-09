@@ -1,43 +1,43 @@
 from django.http import Http404
 from rest_framework import permissions, status
+from rest_framework.generics import GenericAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from banking_system_api.models import Account, Address, Client, AccountType, Currency
 from banking_system_api.serializers import AccountSerializer, AddressSerializer, ClientSerializer, \
     AccountTypeSerializer, CurrencySerializer
 
 
-class BaseApiView(APIView):
+class BaseApiView(GenericAPIView):
+    pagination_class = PageNumberPagination
+
     # add permission to check if user is authenticated
     permission_classes = [permissions.IsAuthenticated]
 
 
 class AddressApiView(BaseApiView):
-    @staticmethod
-    def get_object(pk):
-        try:
-            return Address.objects.get(id=pk)
+    queryset = Address.objects.all()
+    serializer_class = AddressSerializer
 
-        except Address.DoesNotExist:
-            raise Http404
+    def get(self, request, *args, **kwargs):
+        address_id = kwargs.get('address_id')
 
-    def get(self, request, address_id=None):
         if address_id:
-            addresses = Address.objects.filter(id=address_id)
+            data = self.get_queryset().filter(id=address_id)
 
         else:
-            addresses = Address.objects.all()
+            data = self.get_queryset()
 
-        serializer = AddressSerializer(addresses, many=True)
+        serializer = self.get_serializer(data, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, address_id=None):
+    def post(self, request, *args, **kwargs):
         data = {
             'full_address': request.data.get('full_address')
         }
-        serializer = AddressSerializer(data=data)
+        serializer = self.get_serializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -46,27 +46,30 @@ class AddressApiView(BaseApiView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, address_id):
-        address = self.get_object(address_id)
+    def delete(self, request, *args, **kwargs):
+        address_id = kwargs.get('address_id')
+        address = self.get_queryset().get(id=address_id)
         address.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ClientsListApiView(BaseApiView):
-    def get(self, request, client_id=None):
-        addresses = Client.objects.all()
-        serializer = ClientSerializer(addresses, many=True)
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_queryset(), many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, client_id=None):
+    def post(self, request, *args, **kwargs):
         data = {
             'first_name': request.data.get('first_name'),
             'last_name': request.data.get('last_name'),
             'address_id': request.data.get('address_id')
         }
-        serializer = ClientSerializer(data=data)
+        serializer = self.get_serializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -75,9 +78,11 @@ class ClientsListApiView(BaseApiView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, client_id):
+    def delete(self, request, *args, **kwargs):
+        client_id = kwargs.get('client_id')
+
         try:
-            client = Client.objects.get(id=client_id)
+            client = self.get_queryset().get(id=client_id)
             client.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -87,17 +92,19 @@ class ClientsListApiView(BaseApiView):
 
 
 class AccountTypeApiView(BaseApiView):
-    def get(self, request, account_type_id=None):
-        account_types = AccountType.objects.all()
-        serializer = AccountTypeSerializer(account_types, many=True)
+    queryset = AccountType.objects.all()
+    serializer_class = AccountTypeSerializer
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_queryset(), many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, account_type_id=None):
+    def post(self, request, *args, **kwargs):
         data = {
             'name': request.data.get('name')
         }
-        serializer = AccountTypeSerializer(data=data)
+        serializer = self.get_serializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -106,9 +113,11 @@ class AccountTypeApiView(BaseApiView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, account_type_id=None):
+    def delete(self, request, *args, **kwargs):
+        account_type_id = kwargs.get('account_type_id')
+
         try:
-            account_type = AccountType.objects.get(id=account_type_id)
+            account_type = self.get_queryset().get(id=account_type_id)
             account_type.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -118,18 +127,21 @@ class AccountTypeApiView(BaseApiView):
 
 
 class CurrencyApiView(BaseApiView):
-    def get(self, request, currency_id=None):
-        account_types = Currency.objects.all()
-        serializer = CurrencySerializer(account_types, many=True)
+    serializer_class = CurrencySerializer
+    queryset = Currency.objects.all()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request, *args, **kwargs):
+        page = self.paginate_queryset(self.get_queryset())
+        serializer = self.get_serializer(page, many=True)
 
-    def post(self, request, currency_id=None):
+        return self.get_paginated_response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
         data = {
             'symbol': request.data.get('symbol'),
             'name': request.data.get('name')
         }
-        serializer = CurrencySerializer(data=data)
+        serializer = self.get_serializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -138,9 +150,11 @@ class CurrencyApiView(BaseApiView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, currency_id):
+    def delete(self, request,  *args, **kwargs):
+        currency_id = kwargs.get('currency_id')
+
         try:
-            currency = Currency.objects.get(id=currency_id)
+            currency = self.queryset.get(id=currency_id)
             currency.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -150,31 +164,32 @@ class CurrencyApiView(BaseApiView):
 
 
 class AccountApiView(BaseApiView):
-    @staticmethod
-    def get_object(account_id):
-        try:
-            return Account.objects.get(id=account_id)
-
-        except Account.DoesNotExist:
-            raise Http404
+    queryset = Account.objects.all()
+    serializer_class = AccountSerializer
 
     @staticmethod
     def generate_account_number():
         # FIXME
         return '12345678901234567890123456'
 
-    def get(self, request, account_id=None):
+    def get(self, request, *args, **kwargs):
+        account_id = kwargs.get('account_id')
+
         if account_id:
-            data = self.get_object(account_id)
-            serializer = AccountSerializer(data)
+            try:
+                data = self.get_queryset().get(id=account_id)
+                serializer = self.get_serializer(data)
+
+            except Account.DoesNotExist:
+                raise Http404
 
         else:
-            data = Account.objects.all()
-            serializer = AccountSerializer(data, many=True)
+            data = self.get_queryset()
+            serializer = self.get_serializer(data, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, account_id=None):
+    def post(self, request, *args, **kwargs):
         data = {
             'account_number': self.generate_account_number(),
             'balance': request.data.get('balance'),
@@ -183,7 +198,7 @@ class AccountApiView(BaseApiView):
             'account_type_id': request.data.get('account_type_id')
         }
 
-        serializer = AccountSerializer(data=data)
+        serializer = self.get_serializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
@@ -192,15 +207,17 @@ class AccountApiView(BaseApiView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, account_id):
-        account = self.get_object(account_id)
+    def delete(self, request, *args, **kwargs):
+        account_id = kwargs.get('account_id')
+        account = self.get_queryset().get(id=account_id)
         account.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def patch(self, request, account_id):
-        account = self.get_object(account_id)
-        serializer = AccountSerializer(account, data=request.data, partial=True)
+    def patch(self, request, *args, **kwargs):
+        account_id = kwargs.get('account_id')
+        account = self.get_queryset().get(id=account_id)
+        serializer = self.get_serializer(account, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()

@@ -8,6 +8,9 @@ class Address(models.Model):
     def __str__(self):
         return f'{self.full_address}'
 
+    class Meta:
+        ordering = ['id']
+
 
 class Client(models.Model):
     id = models.AutoField(primary_key=True)
@@ -18,6 +21,9 @@ class Client(models.Model):
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
 
+    class Meta:
+        ordering = ['id']
+
 
 class AccountType(models.Model):
     id = models.AutoField(primary_key=True)
@@ -25,6 +31,9 @@ class AccountType(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['id']
 
 
 class Currency(models.Model):
@@ -34,6 +43,9 @@ class Currency(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['id']
 
 
 class Account(models.Model):
@@ -50,4 +62,3 @@ class Account(models.Model):
 
     class Meta:
         ordering = ['creation_date']
-
