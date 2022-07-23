@@ -62,3 +62,20 @@ class Account(models.Model):
 
     class Meta:
         ordering = ['creation_date']
+
+
+class Transfer(models.Model):
+    id = models.AutoField(primary_key=True)
+    transfer_date = models.DateTimeField(auto_now=False, auto_now_add=True, blank=True)
+    sender_account_id = models.ForeignKey(Account, related_name='sender', on_delete=models.CASCADE)
+    recipient_account_id = models.ForeignKey(Account, related_name='recipient', on_delete=models.CASCADE, null=True)
+    recipient_details = models.CharField(max_length=200, default='')
+    amount = models.DecimalField(decimal_places=2, max_digits=20)
+    title = models.CharField(max_length=200, default='')
+    is_external = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.amount}'
+
+    class Meta:
+        ordering = ['transfer_date']

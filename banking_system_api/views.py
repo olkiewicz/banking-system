@@ -4,9 +4,9 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from banking_system_api.models import Account, Address, Client, AccountType, Currency
+from banking_system_api.models import Account, Address, Client, AccountType, Currency, Transfer
 from banking_system_api.serializers import AccountSerializer, AddressSerializer, ClientSerializer, \
-    AccountTypeSerializer, CurrencySerializer
+    AccountTypeSerializer, CurrencySerializer, TransferSerializer
 
 
 class BaseApiView(GenericAPIView):
@@ -225,3 +225,35 @@ class AccountApiView(BaseApiView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class TransferApiView(BaseApiView):
+    queryset = Transfer.objects.all()
+    serializer_class = TransferSerializer
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_queryset(), many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        data = {
+            'sender_account_id': request.data.get('sender_account_id'),
+            'recipient_account_id': request.data.get('recipient_account_id'),
+            'recipient_details': request.data.get('recipient_details'),
+            'amount': request.data.get('amount'),
+            'title': request.data.get('title')
+        }
+
+        if 'is_external' in request.data.keys():
+            # data['is_external'] = True
+            data.update({'is_external': True})
+
+        serializer = self.get_serializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
