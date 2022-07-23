@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Address(models.Model):
@@ -51,7 +52,7 @@ class Currency(models.Model):
 class Account(models.Model):
     id = models.AutoField(primary_key=True)
     account_number = models.CharField(max_length=26)
-    creation_date = models.DateTimeField(auto_now=False, auto_now_add=True, blank=True)
+    creation_date = models.DateTimeField(auto_now_add=True)
     balance = models.DecimalField(decimal_places=2, max_digits=20)
     client_id = models.ForeignKey(Client, on_delete=models.CASCADE)
     currency_id = models.ForeignKey(Currency, on_delete=models.CASCADE)
@@ -62,3 +63,26 @@ class Account(models.Model):
 
     class Meta:
         ordering = ['creation_date']
+
+
+class Transfer(models.Model):
+    id = models.AutoField(primary_key=True)
+    transfer_date = models.DateTimeField(blank=True)
+    sender_account_id = models.ForeignKey(Account, related_name='sender', on_delete=models.CASCADE)
+    recipient_account_id = models.ForeignKey(Account, related_name='recipient', on_delete=models.CASCADE, null=True)
+    recipient_details = models.CharField(max_length=200, default='')
+    amount = models.DecimalField(decimal_places=2, max_digits=20)
+    title = models.CharField(max_length=200, default='', blank=True)
+    is_external = models.BooleanField(default=False, blank=True)
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if not self.id:
+            self.transfer_date = timezone.now()
+
+        super().save()
+
+    def __str__(self):
+        return f'{self.amount}'
+
+    class Meta:
+        ordering = ['-transfer_date']

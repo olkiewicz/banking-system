@@ -3,3 +3,4 @@
 /banking_system_api/__pycache__/*.*.pyc
 /banking_system/__pycache__/*.*.pyc
 .idea/
+/env/*
