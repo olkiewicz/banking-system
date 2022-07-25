@@ -68,8 +68,8 @@ class Account(models.Model):
 class Transfer(models.Model):
     id = models.AutoField(primary_key=True)
     transfer_date = models.DateTimeField(blank=True)
-    sender_account_id = models.ForeignKey(Account, related_name='sender', on_delete=models.CASCADE)
-    recipient_account_id = models.ForeignKey(Account, related_name='recipient', on_delete=models.CASCADE, null=True)
+    sender_account_id = models.ForeignKey(Account, related_name='outgoing_transfers', on_delete=models.CASCADE)
+    recipient_account_id = models.ForeignKey(Account, related_name='incoming_transfers', on_delete=models.CASCADE, null=True)
     recipient_details = models.CharField(max_length=200, default='')
     amount = models.DecimalField(decimal_places=2, max_digits=20)
     title = models.CharField(max_length=200, default='', blank=True)
