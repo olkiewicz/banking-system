@@ -10,6 +10,7 @@ API_CURRENCIES_URL = '/api/currencies/'
 API_ACCOUNT_TYPES_URL = '/api/account_types/'
 API_CLIENTS_URL = '/api/clients/'
 API_ACCOUNT_URL = '/api/accounts/'
+API_TRANSFER_URL = '/api/transfers/'
 
 
 def get_first_address_json():
@@ -86,6 +87,34 @@ def get_second_account_json(client_id, currency_id, account_type_id):
     }
 
 
+def get_first_transfer_json(sender_account_id, recipient_account_id, currency_id):
+    return {
+        'id': 2,
+        'transfer_date': '2042-07-27T17:59:28.805736Z',
+        'sender_account_id': sender_account_id,
+        'recipient_account_id': recipient_account_id,
+        'recipient_details': '44',
+        'amount': '44.00',
+        'currency_id': currency_id,
+        'title': 'first test transfer',
+        'is_external': True
+    }
+
+
+def get_second_transfer_json(sender_account_id, recipient_account_id, currency_id):
+    return {
+        'id': 2,
+        'transfer_date': '2042-07-27T17:59:28.805736Z',
+        'sender_account_id': sender_account_id,
+        'recipient_account_id': recipient_account_id,
+        'recipient_details': '44',
+        'amount': '44.00',
+        'currency_id': currency_id,
+        'title': 'second test transfer',
+        'is_external': True
+    }
+
+
 class BaseTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='test', email='test@email.com', password='123')
@@ -118,6 +147,12 @@ class BaseTestCase(APITestCase):
 
     def create_account_and_get_its_id(self, account_json):
         response = self.client.post(API_ACCOUNT_URL, account_json)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        return response.data.get('id')
+
+    def create_bank_transfer_and_get_its_id(self, transfer_json):
+        response = self.client.post(API_TRANSFER_URL, transfer_json)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         return response.data.get('id')
@@ -212,7 +247,7 @@ class CurrenciesTestCase(BaseTestCase):
     def test_post_currency(self):
         self.create_currency_and_get_its_id(get_first_currency_json())
 
-    # specific case caused of pagination
+    # specific case caused by pagination
     def test_get_currencies(self):
         first_currency_id = self.create_currency_and_get_its_id(get_first_currency_json())
         second_currency_id = self.create_currency_and_get_its_id(get_second_currency_json())
@@ -282,3 +317,74 @@ class AccountsTestCase(BaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertTrue([result.get('id') == first_account_id for result in response.data])
+
+
+class TransfersTestCase(BaseTestCase):
+    def test_post_account(self):
+        first_address_id = self.create_address_and_get_its_id(get_first_address_json())
+        first_client_id = self.create_client_and_get_its_id(get_first_client_json(first_address_id))
+        first_currency_id = self.create_currency_and_get_its_id(get_first_currency_json())
+        first_account_type_id = self.create_account_type_and_get_its_id(get_first_account_type_json())
+        first_account_id = self.create_account_and_get_its_id(get_first_account_json(first_client_id, first_currency_id, first_account_type_id))
+
+        second_address_id = self.create_address_and_get_its_id(get_second_address_json())
+        second_client_id = self.create_client_and_get_its_id(get_second_client_json(second_address_id))
+        second_currency_id = self.create_currency_and_get_its_id(get_second_currency_json())
+        second_account_type_id = self.create_account_type_and_get_its_id(get_second_account_type_json())
+        second_account_id = self.create_account_and_get_its_id(get_second_account_json(second_client_id, second_currency_id, second_account_type_id))
+
+        self.create_bank_transfer_and_get_its_id(get_first_transfer_json(first_account_id, second_account_id, first_currency_id))
+
+    def test_get_accounts(self):
+        first_address_id = self.create_address_and_get_its_id(get_first_address_json())
+        first_client_id = self.create_client_and_get_its_id(get_first_client_json(first_address_id))
+        first_currency_id = self.create_currency_and_get_its_id(get_first_currency_json())
+        first_account_type_id = self.create_account_type_and_get_its_id(get_first_account_type_json())
+        first_account_id = self.create_account_and_get_its_id(get_first_account_json(first_client_id, first_currency_id, first_account_type_id))
+
+        second_address_id = self.create_address_and_get_its_id(get_second_address_json())
+        second_client_id = self.create_client_and_get_its_id(get_second_client_json(second_address_id))
+        second_currency_id = self.create_currency_and_get_its_id(get_second_currency_json())
+        second_account_type_id = self.create_account_type_and_get_its_id(get_second_account_type_json())
+        second_account_id = self.create_account_and_get_its_id(get_second_account_json(second_client_id, second_currency_id, second_account_type_id))
+
+        first_transfer_id = self.create_bank_transfer_and_get_its_id(get_first_transfer_json(first_account_id, second_account_id, second_currency_id))
+        second_transfer_id = self.create_bank_transfer_and_get_its_id(get_first_transfer_json(first_account_id, first_account_id, first_currency_id))
+
+        response = self.client.get(API_TRANSFER_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertTrue([result.get('id') in (first_transfer_id, second_transfer_id) for result in response.data])
+
+    def test_delete_currency(self):
+        first_address_id = self.create_address_and_get_its_id(get_first_address_json())
+        first_client_id = self.create_client_and_get_its_id(get_first_client_json(first_address_id))
+        first_currency_id = self.create_currency_and_get_its_id(get_first_currency_json())
+        first_account_type_id = self.create_account_type_and_get_its_id(get_first_account_type_json())
+        first_account_id = self.create_account_and_get_its_id(
+            get_first_account_json(first_client_id, first_currency_id, first_account_type_id))
+
+        second_address_id = self.create_address_and_get_its_id(get_second_address_json())
+        second_client_id = self.create_client_and_get_its_id(get_second_client_json(second_address_id))
+        second_currency_id = self.create_currency_and_get_its_id(get_second_currency_json())
+        second_account_type_id = self.create_account_type_and_get_its_id(get_second_account_type_json())
+        second_account_id = self.create_account_and_get_its_id(
+            get_second_account_json(second_client_id, second_currency_id, second_account_type_id))
+
+        first_transfer_id = self.create_bank_transfer_and_get_its_id(
+            get_first_transfer_json(first_account_id, second_account_id, second_currency_id))
+        second_transfer_id = self.create_bank_transfer_and_get_its_id(
+            get_first_transfer_json(first_account_id, first_account_id, first_currency_id))
+
+        response = self.client.get(API_TRANSFER_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertTrue([result.get('id') in (first_transfer_id, second_transfer_id) for result in response.data])
+
+        response = self.client.delete(f'{API_TRANSFER_URL}{second_transfer_id}')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        response = self.client.get(API_TRANSFER_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertTrue([result.get('id') == first_transfer_id for result in response.data])

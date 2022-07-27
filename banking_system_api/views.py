@@ -241,7 +241,8 @@ class TransferApiView(BaseApiView):
             'sender_account_id': request.data.get('sender_account_id'),
             'recipient_account_id': request.data.get('recipient_account_id'),
             'recipient_details': request.data.get('recipient_details'),
-            'amount': request.data.get('amount')
+            'amount': request.data.get('amount'),
+            'currency_id': request.data.get('currency_id')
         }
 
         if 'is_external' in request.data.keys():

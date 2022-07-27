@@ -4,8 +4,8 @@ from banking_system_api.models import Account, Address, Client, AccountType, Cur
 
 
 class AccountSerializer(serializers.ModelSerializer):
-    outgoing_transfers = serializers.StringRelatedField(many=True)
-    incoming_transfers = serializers.StringRelatedField(many=True)
+    outgoing_transfers = serializers.StringRelatedField(many=True, required=False)
+    incoming_transfers = serializers.StringRelatedField(many=True, required=False)
 
     class Meta:
         model = Account
@@ -41,4 +41,6 @@ class TransferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transfer
-        fields = ['id', 'transfer_date', 'sender_account_id', 'recipient_account_id', 'recipient_details', 'amount', 'title', 'is_external']
+        model = Transfer
+        fields = ['id', 'transfer_date', 'sender_account_id', 'recipient_account_id', 'recipient_details', 'amount',
+                  'currency_id', 'title', 'is_external']

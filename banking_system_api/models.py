@@ -72,6 +72,7 @@ class Transfer(models.Model):
     recipient_account_id = models.ForeignKey(Account, related_name='incoming_transfers', on_delete=models.CASCADE, null=True)
     recipient_details = models.CharField(max_length=200, default='')
     amount = models.DecimalField(decimal_places=2, max_digits=20)
+    currency_id = models.ForeignKey(Currency, on_delete=models.CASCADE)
     title = models.CharField(max_length=200, default='', blank=True)
     is_external = models.BooleanField(default=False, blank=True)
 
@@ -82,6 +83,7 @@ class Transfer(models.Model):
         super().save()
 
     def __str__(self):
+        # return f'{self.amount} {self.currency.name}'
         return f'{self.amount}'
 
     class Meta:
