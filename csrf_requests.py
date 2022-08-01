@@ -21,7 +21,7 @@ class CsrfRequest:
             'sessionid': self.session_id
         }
 
-        if method == 'POST':
+        if method in ['POST', 'DELETE', 'PATCH']:
             token_headers['X-CSRFToken'] = self.csrf_token
 
         return requests.request(method, url, data=data, headers=token_headers, cookies=cookies)
@@ -50,27 +50,33 @@ class CsrfRequest:
 
 authenticated_request = CsrfRequest('http://127.0.0.1:8000/api-auth/login/', 'admin', '123')
 transfers_response = authenticated_request.request('GET',
-    'http://127.0.0.1:8000/api/account_types/'
+    'http://127.0.0.1:8000/api/accounts/'
 )
 
 print()
 print(f'{transfers_response.status_code}')
 print(f'{transfers_response.text}')
 
-request_data = {'name': 'test account type'}
-transfers_response = authenticated_request.request('POST',
-    'http://127.0.0.1:8000/api/account_types/',
-    data=request_data
-)
 
+request_data = {'balance': '999999.13'}
+patch_request = authenticated_request.request('PATCH',
+'http://127.0.0.1:8000/api/accounts/1',
+                                              data=request_data
+                                              )
+# request_data = {'name': 'test account type'}
+# transfers_response = authenticated_request.request('POST',
+#     'http://127.0.0.1:8000/api/account_types/',
+#     data=request_data
+# )
+#
 print()
-print(f'{transfers_response.status_code}')
-print(f'{transfers_response.text}')
-print(f'{transfers_response.headers}')
+print(f'{patch_request.status_code}')
+print(f'{patch_request.text}')
+print(f'{patch_request.headers}')
 
 
 transfers_response = authenticated_request.request('GET',
-    'http://127.0.0.1:8000/api/account_types/'
+    'http://127.0.0.1:8000/api/accounts/'
 )
 
 print()
